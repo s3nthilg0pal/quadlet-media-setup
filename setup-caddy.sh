@@ -26,48 +26,52 @@ echo "Writing Caddy config..."
 
 cat > "$CADDY_CONFIG_DIR/Caddyfile" <<'EOF'
 {
-	auto_https off
+	local_certs
 }
 
 import /etc/caddy/sites/*.caddy
 EOF
 
 cat > "$CADDY_CONFIG_DIR/sites/media.caddy" <<'EOF'
-http://jellyfin.home.arpa {
+jellyfin.home.arpa {
 	reverse_proxy jellyfin:8096
 }
 
-http://sonarr.home.arpa {
+sonarr.home.arpa {
 	reverse_proxy sonarr:8989
 }
 
-http://radarr.home.arpa {
+radarr.home.arpa {
 	reverse_proxy radarr:7878
 }
 
-http://prowlarr.home.arpa {
+prowlarr.home.arpa {
 	reverse_proxy prowlarr:9696
 }
 
-http://bazarr.home.arpa {
+bazarr.home.arpa {
 	reverse_proxy bazarr:6767
 }
 
-http://qbittorrent.home.arpa {
+subgen.home.arpa {
+	reverse_proxy subgen:9000
+}
+
+qbittorrent.home.arpa {
 	reverse_proxy qbittorrent:8080
 }
 
-http://seerr.home.arpa {
+seerr.home.arpa {
 	reverse_proxy seerr:5055
 }
 EOF
 
 cat > "$CADDY_CONFIG_DIR/sites/observability.caddy" <<'EOF'
-http://grafana.home.arpa {
+grafana.home.arpa {
 	reverse_proxy grafana:3000
 }
 
-http://prometheus.home.arpa {
+prometheus.home.arpa {
 	reverse_proxy prometheus:9090
 }
 EOF
@@ -122,12 +126,16 @@ echo ""
 echo "Done."
 echo ""
 echo "Caddy:"
-echo "  http://jellyfin.home.arpa"
-echo "  http://sonarr.home.arpa"
-echo "  http://radarr.home.arpa"
-echo "  http://prowlarr.home.arpa"
-echo "  http://bazarr.home.arpa"
-echo "  http://qbittorrent.home.arpa"
-echo "  http://seerr.home.arpa"
-echo "  http://grafana.home.arpa"
-echo "  http://prometheus.home.arpa"
+echo "  https://jellyfin.home.arpa"
+echo "  https://sonarr.home.arpa"
+echo "  https://radarr.home.arpa"
+echo "  https://prowlarr.home.arpa"
+echo "  https://bazarr.home.arpa"
+echo "  https://subgen.home.arpa"
+echo "  https://qbittorrent.home.arpa"
+echo "  https://seerr.home.arpa"
+echo "  https://grafana.home.arpa"
+echo "  https://prometheus.home.arpa"
+echo ""
+echo "Trust Caddy's local root CA on each client to avoid browser warnings:"
+echo "  ~/media-stack/config/caddy/data/caddy/pki/authorities/local/root.crt"

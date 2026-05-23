@@ -12,6 +12,7 @@ SERVICES=(
   radarr
   prowlarr
   bazarr
+  subgen
   qbittorrent
   seerr
 )
@@ -24,7 +25,7 @@ echo "Creating folders..."
 
 mkdir -p "$SYSTEMD_DIR"
 
-mkdir -p "$CONFIG_DIR"/{jellyfin,sonarr,radarr,prowlarr,bazarr,qbittorrent,seerr,lidarr,readarr}
+mkdir -p "$CONFIG_DIR"/{jellyfin,sonarr,radarr,prowlarr,bazarr,subgen/models,qbittorrent,seerr,lidarr,readarr}
 
 if [ -d "$CONFIG_DIR/jellyseerr" ] && [ -z "$(find "$CONFIG_DIR/seerr" -mindepth 1 -maxdepth 1 2>/dev/null)" ]; then
   echo "Copying existing Jellyseerr config to Seerr..."
@@ -186,6 +187,50 @@ Restart=always
 WantedBy=default.target
 EOF
 
+echo "Writing Subgen Quadlet..."
+
+cat > "$SYSTEMD_DIR/subgen.container" <<'EOF'
+[Unit]
+Description=Subgen Whisper Subtitle Generator
+After=media-network.service
+Requires=media-network.service
+
+[Container]
+Image=docker.io/mccloud/subgen:latest
+ContainerName=subgen
+Network=media.network
+PublishPort=9000:9000
+UserNS=keep-id
+User=1000:0
+
+Environment=PUID=1000
+Environment=PGID=0
+Environment=TZ=Pacific/Auckland
+Environment=WEBHOOK_PORT=9000
+Environment=TRANSCRIBE_DEVICE=cuda
+Environment=WHISPER_MODEL=medium
+Environment=CONCURRENT_TRANSCRIPTIONS=1
+Environment=WHISPER_THREADS=4
+Environment=CLEAR_VRAM_ON_COMPLETE=True
+Environment=MODEL_PATH=/subgen/models
+Environment=DEBUG=True
+
+Volume=%h/media-stack/config/subgen/models:/subgen/models:Z
+Volume=/mnt/nas/media/movies:/movies:Z
+Volume=/mnt/nas/media/tv:/tv:Z
+
+# NVIDIA GPU via CDI. Requires working NVIDIA drivers, nvidia-container-toolkit,
+# and a generated CDI spec, usually /etc/cdi/nvidia.yaml.
+AddDevice=nvidia.com/gpu=all
+PodmanArgs=--security-opt=label=disable
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target
+EOF
+
 echo "Writing qBittorrent Quadlet..."
 
 cat > "$SYSTEMD_DIR/qbittorrent.container" <<'EOF'
@@ -296,6 +341,7 @@ echo "Sonarr:      http://localhost:8989"
 echo "Radarr:      http://localhost:7878"
 echo "Prowlarr:    http://localhost:9696"
 echo "Bazarr:      http://localhost:6767"
+echo "Subgen:      http://localhost:9000"
 echo "qBittorrent: http://localhost:8080"
 echo "Seerr:       http://localhost:5055"
 echo ""
